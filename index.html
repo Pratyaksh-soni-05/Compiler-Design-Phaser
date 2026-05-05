@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compiler Phases Visualizer</title>
+  <meta name="description" content="An interactive, step-by-step visualization of all 6 phases of a compiler." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ API PORT CONFIG — change only this line if port changes -->
+  <script>
+    window.API_BASE = "http://localhost:8001";
+  </script>
+</head>
+<body>
+
+  <!-- Background Particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- ✅ Port indicator banner -->
+  <div id="portBanner" style="
+    background: rgba(99,102,241,0.15);
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    text-align: center;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: #a5b4fc;
+  ">
+    🔌 API: <strong id="portDisplay"></strong> &nbsp;|&nbsp;
+    <span id="apiStatusDot">⏳ checking...</span>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚙️</div>
+        <div class="logo-text">
+          <span class="logo-title">CompilerViz</span>
+          <span class="logo-sub">Phase Visualizer</span>
+        </div>
+      </div>
+      <div class="header-badge">6 Phases · Interactive</div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">🎓 Educational Tool</div>
+      <h1 class="hero-title">Compiler Phases<br /><span class="gradient-text">Visualized</span></h1>
+      <p class="hero-desc">
+        Watch your C-like source code flow through all six compiler phases — from raw tokens to pseudo-assembly.<br />
+        Click <strong>Run All Phases</strong> or step through each phase individually.
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="btnRunAll">▶ Run All Phases</button>
+        <button class="btn btn-secondary" id="btnReset">↺ Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main layout -->
+  <main class="main">
+
+    <!-- Input Panel -->
+    <section class="panel input-panel">
+      <div class="panel-header">
+        <div class="panel-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">📝</div>
+        <div style="flex:1;">
+          <h2 class="panel-title">Source Code</h2>
+          <p class="panel-subtitle">Edit your C-like program below</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          <span id="lineCount" style="font-size:.75rem;color:var(--text-muted);font-family:var(--mono);">16 lines</span>
+          <button id="btnClearCode" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#fca5a5;padding:.3rem .8rem;border-radius:999px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:var(--font);transition:all .2s;">✕ Clear</button>
+        </div>
+      </div>
+      <!-- ✅ Fixed: raw characters instead of HTML entities inside textarea -->
+      <textarea id="sourceCode" class="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off">
+#include <stdio.h>
+int main() {
+    char ch = 'A';
+    if((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+        if(ch=='a'||ch=='e'||ch=='i'||ch=='o'||ch=='u'||
+           ch=='A'||ch=='E'||ch=='I'||ch=='O'||ch=='U')
+            printf("Vowel\n");
+        else
+            printf("Consonant\n");
+    } else if(ch >= '0' && ch <= '9') {
+        printf("Digit\n");
+    } else {
+        printf("Special Character\n");
+    }
+    return 0;
+}</textarea>
+    </section>
+
+    <!-- Pipeline Flow -->
+    <section class="pipeline-section">
+      <h2 class="pipeline-heading">Compilation Pipeline</h2>
+      <div class="pipeline" id="pipeline">
+        <div class="pipeline-step" id="step-0" data-phase="0">
+          <div class="step-num">1</div>
+          <div class="step-label">Lexical<br/>Analysis</div>
+          <div class="step-status" id="status-0">⏳</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-1" data-phase="1">
+          <div class="step-num">2</div>
+          <div class="step-label">Syntax<br/>Analysis</div>
+          <div class="step-status" id="status-1">⏳</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-2" data-phase="2">
+          <div class="step-num">3</div>
+          <div class="step-label">Semantic<br/>Analysis</div>
+          <div class="step-status" id="status-2">⏳</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-3" data-phase="3">
+          <div class="step-num">4</div>
+          <div class="step-label">Intermediate<br/>Code</div>
+          <div class="step-status" id="status-3">⏳</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-4" data-phase="4">
+          <div class="step-num">5</div>
+          <div class="step-label">Code<br/>Optimization</div>
+          <div class="step-status" id="status-4">⏳</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-5" data-phase="5">
+          <div class="step-num">6</div>
+          <div class="step-label">Target Code<br/>Generation</div>
+          <div class="step-status" id="status-5">⏳</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Summary -->
+    <div id="errorSummary" style="display:none; max-width:1200px; margin:0 auto 2rem; padding:0 1.5rem;">
+      <div class="error-banner">
+        <span class="error-icon">❌</span>
+        <span id="errorMessage" class="error-msg"></span>
+      </div>
+    </div>
+
+    <!-- Phase Cards -->
+    <div class="phases-grid" id="phasesGrid">
+
+      <div class="phase-card" id="phase-0">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">🔤</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 1</span>
+            <h3 class="phase-name">Lexical Analysis</h3>
+            <p class="phase-desc">Breaks source code into a stream of tokens using regular expressions.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase0" onclick="runPhase(0)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-0">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+      <div class="phase-card" id="phase-1">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">🌳</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 2</span>
+            <h3 class="phase-name">Syntax Analysis</h3>
+            <p class="phase-desc">Validates structural correctness — checks balanced parentheses and braces.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase1" onclick="runPhase(1)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-1">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+      <div class="phase-card" id="phase-2">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">📋</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 3</span>
+            <h3 class="phase-name">Semantic Analysis</h3>
+            <p class="phase-desc">Builds the symbol table and checks type correctness of declarations.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase2" onclick="runPhase(2)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-2">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+      <div class="phase-card" id="phase-3">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">⚡</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 4</span>
+            <h3 class="phase-name">Intermediate Code</h3>
+            <p class="phase-desc">Generates 3-address code — a language-independent intermediate representation.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase3" onclick="runPhase(3)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-3">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+      <div class="phase-card" id="phase-4">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🚀</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 5</span>
+            <h3 class="phase-name">Code Optimization</h3>
+            <p class="phase-desc">Removes redundant expressions and improves efficiency of intermediate code.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase4" onclick="runPhase(4)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-4">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+      <div class="phase-card" id="phase-5">
+        <div class="phase-header">
+          <div class="phase-icon" style="background: linear-gradient(135deg, #f7971e, #ffd200);">🖥️</div>
+          <div class="phase-meta">
+            <span class="phase-badge">Phase 6</span>
+            <h3 class="phase-name">Target Code Generation</h3>
+            <p class="phase-desc">Produces pseudo-assembly instructions for the target machine.</p>
+          </div>
+          <button class="phase-run-btn" id="runPhase5" onclick="runPhase(5)">Run ▶</button>
+        </div>
+        <div class="phase-body" id="body-5">
+          <div class="phase-placeholder">Click <strong>Run</strong> to execute this phase</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Final Output -->
+    <section class="output-section" id="outputSection" style="display:none;">
+      <div class="output-header">
+        <span>🎉</span>
+        <h2>Compilation Complete!</h2>
+        <p>All 6 phases executed successfully. Your program is ready for execution.</p>
+      </div>
+      <div class="output-summary" id="outputSummary"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Built for understanding compiler design · <span class="gradient-text">6 Phases Visualized</span></p>
+  </footer>
+
+  <!-- ✅ Health check + port display on load -->
+  <script>
+    document.getElementById("portDisplay").textContent = window.API_BASE;
+    fetch(window.API_BASE + "/api/health")
+      .then(r => r.json())
+      .then(() => {
+        document.getElementById("apiStatusDot").textContent = "✅ Backend connected";
+        document.getElementById("apiStatusDot").style.color = "#4ade80";
+      })
+      .catch(() => {
+        document.getElementById("apiStatusDot").textContent = "❌ Backend offline — check port";
+        document.getElementById("apiStatusDot").style.color = "#f87171";
+      });
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>
